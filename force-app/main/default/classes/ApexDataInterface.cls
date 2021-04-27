@@ -3,6 +3,29 @@
 */
 
 public with sharing class ApexDataInterface {
+    // Take an arbitrary query string and run that query
+    @AuraEnabled(cacheable=false)
+    public static sObject[] queryFromString(String queryString) {
+      try {
+        return Database.query(queryString);
+      }catch(Exception e) {
+        throw new AuraHandledException(e.getMessage());
+      }
+    }
+
+
+    // Create an empty object of given objectName Type and give
+    // that back to get the defaults
+    @AuraEnabled(cacheable=false)
+    public static sObject getObjectDefaults(String objectName) {
+      try {
+        return ((sObject) Type.forName(objectName).newInstance()).getSObjectType().newSObject(null, true);
+      }catch(Exception e) {
+        throw new AuraHandledException(e.getMessage());
+      }
+    }
+
+
     // Given an array of fields, which is a standard argument for passing desired fields on this interface,
     // this will give back a String that can be given to SELECT
     // If no fields, then it returns an empty string
@@ -149,7 +172,24 @@ public with sharing class ApexDataInterface {
   
         if (recordObject != null) {
           for (String key : fieldValuePairs.keySet()) {
-            recordObject.put(key, fieldValuePairs.get(key));
+            if(key.equalsIgnoreCase('date') || key.equalsIgnoreCase('date__c')) {
+System.debug(fieldValuePairs.get(key));
+              String originalString = (String) fieldValuePairs.get(key);
+              
+              originalString = originalString.split('Z')[0];
+              originalString = originalString.split('T')[0];
+
+              String[] dateSplit = originalString.split('-');
+
+              String dateString = dateSplit[1];
+              dateString += '/' + dateSplit[2];
+              dateString += '/' + dateSplit[0];
+System.debug(dateString);
+              recordObject.put(key, Date.parse(dateString));
+            }else {
+              recordObject.put(key, fieldValuePairs.get(key));
+            }
+
           }
   
           Database.SaveResult result = Database.update(recordObject, true);
@@ -178,9 +218,25 @@ public with sharing class ApexDataInterface {
         recordObject = (sObject) Type.forName(objectName).newInstance();
         
         for (String key : fieldValuePairs.keySet()) {
+          if(key.equalsIgnoreCase('date') || key.equalsIgnoreCase('date__c')) {
+System.debug(fieldValuePairs.get(key));
+            String originalString = (String) fieldValuePairs.get(key);
+            
+            originalString = originalString.split('Z')[0];
+            originalString = originalString.split('T')[0];
+
+            String[] dateSplit = originalString.split('-');
+
+            String dateString = dateSplit[1];
+            dateString += '/' + dateSplit[2];
+            dateString += '/' + dateSplit[0];
+System.debug(dateString);
+            recordObject.put(key, Date.parse(dateString));
+          }else {
             recordObject.put(key, fieldValuePairs.get(key));
+          }
         }
-       
+
         Database.SaveResult result = Database.insert(recordObject, true);
         
         if (result.isSuccess()) {

@@ -4,6 +4,30 @@
 @isTest
 private class ApexDataInterfaceTest {
   //----------------------------------------------------------------------------------
+  //--------------------------- queryFromString Tests --------------------------------
+  // ---------------------------------------------------------------------------------
+  @isTest
+  static void testQueryFromString_BaseCase() {
+    List<Opportunity> testOpportunities = ApexDataInterfaceTestDataFactory.loadOpportunityData();
+
+    Opportunity[] ops = ApexDataInterface.queryFromString('SELECT Name FROM Opportunity');
+
+    System.assert(ops.size() > 0);
+  }
+
+
+  // ---------------------------------------------------------------
+  // ------------------------getObjectDefaults Test ---------------------------
+  // ---------------------------------------------------------------
+  @isTest
+  static void testGetObjectDefaults_BaseCase() {
+    Opportunity opp = (Opportunity) ApexDataInterface.getObjectDefaults('Opportunity');
+
+    System.assert(true);
+  }
+
+
+  //----------------------------------------------------------------------------------
   //---------------------------- fieldsToSelect Tests --------------------------------
   // ---------------------------------------------------------------------------------
 
@@ -118,6 +142,21 @@ private class ApexDataInterfaceTest {
     }
 
 
+    @isTest(SeeAllData=true)
+    static void testUpdateRecordFromId_DateExecute() {
+      AdminChecklist__c[] testAdmins = [
+        SELECT Id, Date__c
+        FROM AdminChecklist__c
+        WHERE Salesman__r.Name LIKE '%Kaden Slater%'
+      ];
+
+      Boolean isUpdated = ApexDataInterface.updateRecordFromId('AdminChecklist__c', testAdmins[0].Id, new Map<String, Object> {'Date__c'=>'2021-04-01'});
+
+      System.assertEquals(true, isUpdated);
+    }
+    
+
+
   //----------------------------------------------------------------------------------
   //---------------------------- insertRecord Tests ----------------------------------
   // ---------------------------------------------------------------------------------
@@ -144,4 +183,12 @@ private class ApexDataInterfaceTest {
 
     System.assert(preLoadedOpportunities.size() < afterLoadedOpportunities.size());
   }
+
+
+  @isTest(SeeAllData=true)
+    static void testInsertRecord_DateExecute() {
+      Boolean isInserted = ApexDataInterface.insertRecord('AdminChecklist__c', new Map<String, Object> {'Customer_Name__c'=> 'Evergy', 'Date__c'=> '2021-04-01'});
+
+      System.assertEquals(true, isInserted);
+    }
 }
